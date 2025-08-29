@@ -302,6 +302,9 @@ class BombFlipBettingGame {
     }
 
     async apiCall(endpoint, method = 'GET', data = null) {
+        const url = `${this.config.apiBaseUrl}${endpoint}`;
+        console.log(`🌐 API Call: ${method} ${url}`);
+
         try {
             const options = {
                 method: method,
@@ -312,19 +315,30 @@ class BombFlipBettingGame {
 
             if (data) {
                 options.body = JSON.stringify(data);
+                console.log('📤 Request body:', JSON.stringify(data, null, 2));
             }
 
-            const response = await fetch(`${this.config.apiBaseUrl}${endpoint}`, options);
+            console.log('🚀 Making fetch request...');
+            const response = await fetch(url, options);
+            console.log('📡 Response status:', response.status, response.statusText);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error('API Error:', errorData);
-                return { success: false, error: errorData };
+                const errorData = await response.text();
+                console.error('❌ API Error Response:', errorData);
+                try {
+                    const jsonError = JSON.parse(errorData);
+                    return { success: false, error: jsonError };
+                } catch {
+                    return { success: false, error: errorData };
+                }
             }
 
-            return await response.json();
+            const responseData = await response.json();
+            console.log('✅ API Success Response:', responseData);
+            return responseData;
+
         } catch (error) {
-            console.error('Network Error:', error);
+            console.error('💥 Network Error:', error);
             return { success: false, error: error.message };
         }
     }
@@ -398,10 +412,10 @@ class BombFlipBettingGame {
             const gameData = {
                 user_id: this.userId,
                 username: this.userName,
-                starting_balance: this.wallet + stakeAmount, // Original wallet before deduction
+                starting_balance: parseFloat((this.wallet + stakeAmount).toFixed(2)), // Original wallet before deduction
                 grid_size: this.gridSize,
-                bomb_probability: this.bombProbability,
-                stake: stakeAmount
+                bomb_probability: parseFloat(this.bombProbability.toFixed(2)),
+                stake: parseFloat(stakeAmount.toFixed(2))
             };
 
             console.log('🌐 Calling backend API...');
@@ -529,8 +543,8 @@ class BombFlipBettingGame {
             // Log bomb hit event
             await this.logGameEvent('BOMB_HIT', {
                 cell_position: cellPosition,
-                balance: this.wallet,
-                multiplier: this.currentMultiplier
+                balance: parseFloat(this.wallet.toFixed(2)),
+                multiplier: parseFloat(this.currentMultiplier.toFixed(2))
             });
 
             this.showMessage(`💥 BOOM! You hit a bomb and lost ₦${this.currentStake.toFixed(2)}!`, 'lose');
@@ -549,8 +563,8 @@ class BombFlipBettingGame {
             // Log flip event
             await this.logGameEvent('FLIP', {
                 cell_position: cellPosition,
-                balance: this.wallet,
-                multiplier: this.currentMultiplier
+                balance: parseFloat(this.wallet.toFixed(2)),
+                multiplier: parseFloat(this.currentMultiplier.toFixed(2))
             });
 
             this.updateGameInfo();
@@ -564,9 +578,9 @@ class BombFlipBettingGame {
 
                 // Log perfect game cashout
                 await this.logGameEvent('CASHOUT', {
-                    amount: winnings,
-                    balance: this.wallet,
-                    multiplier: this.currentMultiplier
+                    amount: parseFloat(winnings.toFixed(2)),
+                    balance: parseFloat(this.wallet.toFixed(2)),
+                    multiplier: parseFloat(this.currentMultiplier.toFixed(2))
                 });
 
                 // Show winnings display
@@ -590,9 +604,9 @@ class BombFlipBettingGame {
 
         // Log cashout event
         await this.logGameEvent('CASHOUT', {
-            amount: winnings,
-            balance: this.wallet,
-            multiplier: this.currentMultiplier
+            amount: parseFloat(winnings.toFixed(2)),
+            balance: parseFloat(this.wallet.toFixed(2)),
+            multiplier: parseFloat(this.currentMultiplier.toFixed(2))
         });
 
         // Show winnings display
@@ -650,8 +664,15 @@ class BombFlipBettingGame {
     }
 
     async logGameEvent(eventType, eventData = {}) {
-        if (this.offlineMode || !this.currentSessionId) {
-            console.log(`Offline mode - skipping ${eventType} event log`);
+        console.log(`🎯 Attempting to log event: ${eventType}`, eventData);
+
+        if (this.offlineMode) {
+            console.log(`⚠️ Offline mode - skipping ${eventType} event log`);
+            return;
+        }
+
+        if (!this.currentSessionId) {
+            console.log(`❌ No session ID - skipping ${eventType} event log`);
             return;
         }
 
@@ -661,13 +682,17 @@ class BombFlipBettingGame {
             ...eventData
         };
 
+        console.log('📤 Sending payload to backend:', payload);
+
         const response = await this.apiCall('/game/event/', 'POST', payload);
 
+        console.log('📥 Backend response:', response);
+
         if (!response.success) {
-            console.error('Failed to log event:', eventType, response.error);
+            console.error('❌ Failed to log event:', eventType, response.error);
             // Don't switch to offline mode for individual event failures
         } else {
-            console.log('✅ Event logged:', eventType, payload);
+            console.log('✅ Event logged successfully:', eventType, payload);
         }
     }
 
