@@ -25,6 +25,7 @@ class BombFlipBettingGame {
 
         // Backend integration
         this.currentSessionId = null;
+        this.userName = '';
         this.userId = this.generateUserId();
         this.offlineMode = false;
 
@@ -240,12 +241,14 @@ class BombFlipBettingGame {
         this.gameMessageElement = document.getElementById('game-message');
 
         // Setup elements
+        this.usernameInput = document.getElementById('username-input');
         this.stakeInput = document.getElementById('stake-input');
         this.gridSizeSelect = document.getElementById('grid-size');
         this.bombProbabilitySelect = document.getElementById('bomb-probability');
         this.startGameBtn = document.getElementById('start-game-btn');
 
         // Game info elements
+        this.currentPlayerElement = document.getElementById('current-player');
         this.currentStakeElement = document.getElementById('current-stake');
         this.currentMultiplierElement = document.getElementById('current-multiplier');
         this.potentialWinningsElement = document.getElementById('potential-winnings');
@@ -275,11 +278,27 @@ class BombFlipBettingGame {
             const maxStake = Math.min(this.wallet, this.config.maxStake);
             this.stakeInput.max = maxStake;
         });
+
+        // Generate random username if empty
+        this.usernameInput.addEventListener('focus', () => {
+            if (!this.usernameInput.value.trim()) {
+                this.usernameInput.value = this.generateRandomUsername();
+            }
+        });
     }
 
     generateUserId() {
         // Generate a simple user ID for demo purposes
         return 'player_' + Math.random().toString(36).substring(2, 11);
+    }
+
+    generateRandomUsername() {
+        const adjectives = ['Lucky', 'Bold', 'Swift', 'Clever', 'Brave', 'Sharp', 'Quick', 'Smart'];
+        const nouns = ['Player', 'Gamer', 'Winner', 'Champion', 'Hero', 'Star', 'Pro', 'Master'];
+        const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const noun = nouns[Math.floor(Math.random() * nouns.length)];
+        const number = Math.floor(Math.random() * 999) + 1;
+        return `${adjective}${noun}${number}`;
     }
 
     async apiCall(endpoint, method = 'GET', data = null) {
@@ -313,6 +332,14 @@ class BombFlipBettingGame {
     async startGame() {
         try {
             console.log('🎮 Starting game...');
+
+            // Get and validate username
+            this.userName = this.usernameInput.value.trim();
+            if (!this.userName) {
+                this.userName = this.generateRandomUsername();
+                this.usernameInput.value = this.userName;
+            }
+            console.log('👤 Player name:', this.userName);
 
             // Validate stake
             const stakeAmount = parseFloat(this.stakeInput.value);
@@ -348,6 +375,7 @@ class BombFlipBettingGame {
             this.gameInfo.classList.remove('hidden');
             this.gameMessageElement.classList.add('hidden');
             this.updateGameInfo();
+            this.updatePlayerInfo();
             this.updateWalletDisplay();
             console.log('✅ Game started successfully!');
 
@@ -369,6 +397,7 @@ class BombFlipBettingGame {
         try {
             const gameData = {
                 user_id: this.userId,
+                username: this.userName,
                 starting_balance: this.wallet + stakeAmount, // Original wallet before deduction
                 grid_size: this.gridSize,
                 bomb_probability: this.bombProbability,
@@ -683,6 +712,10 @@ class BombFlipBettingGame {
         this.currentMultiplierElement.textContent = `${this.currentMultiplier.toFixed(2)}x`;
         this.potentialWinningsElement.textContent = `₦${(this.currentStake * this.currentMultiplier).toFixed(2)}`;
         this.safeCardsElement.textContent = this.safeCardsFlipped;
+    }
+
+    updatePlayerInfo() {
+        this.currentPlayerElement.textContent = this.userName || 'Guest';
     }
 
     updateWalletDisplay() {
