@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Backend API Test</h1>
+
+    <div class="test-section">
+        <h3>Test 1: Start Game Session</h3>
+        <button onclick="testStartGame()">Start Test Game</button>
+        <div id="start-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Log Game Events</h3>
+        <button onclick="testLogEvent()">Log Test Event</button>
+        <div id="event-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Get Session Details</h3>
+        <button onclick="testGetSession()">Get Session</button>
+        <div id="session-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let testSessionId = null;
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const result = await response.json();
+
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: result
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        async function testStartGame() {
+            const resultDiv = document.getElementById('start-result');
+            resultDiv.textContent = 'Testing...';
+
+            const gameData = {
+                user_id: 'test_player_123',
+                starting_balance: 1000.00,
+                grid_size: 5,
+                bomb_probability: 20.0,
+                stake: 100.00
+            };
+
+            const result = await apiCall('/game/start/', 'POST', gameData);
+
+            if (result.success) {
+                testSessionId = result.data.session_id;
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\nSession ID: ${testSessionId}\nStatus: ${result.data.status}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR!\nStatus: ${result.status}\nError: ${JSON.stringify(result.data, null, 2)}`;
+            }
+        }
+
+        async function testLogEvent() {
+            const resultDiv = document.getElementById('event-result');
+
+            if (!testSessionId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ No active session! Run "Start Test Game" first.';
+                return;
+            }
+
+            resultDiv.textContent = 'Testing...';
+
+            const eventData = {
+                session_id: testSessionId,
+                event_type: 'FLIP',
+                balance: 900.00,
+                multiplier: 1.1,
+                cell_position: '2-3'
+            };
+
+            const result = await apiCall('/game/event/', 'POST', eventData);
+
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\nEvent logged: ${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR!\nStatus: ${result.status}\nError: ${JSON.stringify(result.data, null, 2)}`;
+            }
+        }
+
+        async function testGetSession() {
+            const resultDiv = document.getElementById('session-result');
+
+            if (!testSessionId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ No active session! Run "Start Test Game" first.';
+                return;
+            }
+
+            resultDiv.textContent = 'Testing...';
+
+            const result = await apiCall(`/game/session/${testSessionId}/`);
+
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\nSession Data:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR!\nStatus: ${result.status}\nError: ${JSON.stringify(result.data, null, 2)}`;
+            }
+        }
+    </script>
+</body>
+</html>

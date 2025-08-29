@@ -1,0 +1,92 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# ---- Django ----
+*.db
+*.sqlite3
+*.sqlite3-journal
+media/
+staticfiles/
+.env
+.env.*
+*.pot
+*.mo
+
+# Django Migrations
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# ---- Virtual Environment ----
+venv/
+env/
+.venv/
+
+# ---- IDE & Editor Config ----
+.vscode/
+.idea/
+*.swp
+
+# ---- JavaScript / Node ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+.next/
+.nuxt/
+dist/
+out/
+coverage/
+*.tsbuildinfo
+
+# ---- Build Artifacts ----
+/build/
+/dist/
+/tmp/
+/temp/
+
+# ---- Logs ----
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ---- OS Specific ----
+.DS_Store
+Thumbs.db
+
+# ---- Cache ----
+.cache/
+.npm/
+.eslintcache
+.parcel-cache/
+.stylelintcache
+
+# ---- Testing ----
+.coverage
+.pytest_cache/
+htmlcov/
+
+# ---- Frontend Specific ----
+# React / Vue / Angular build output
+/build/
+/dist/
+/public/static/
+/public/assets/
+
+# ---- Misc ----
+*.bak
+*.orig
+*.rej
