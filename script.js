@@ -388,6 +388,10 @@ class BombFlipBettingGame {
             this.gameSetup.classList.add('hidden');
             this.gameInfo.classList.remove('hidden');
             this.gameMessageElement.classList.add('hidden');
+
+            // Disable cashout button initially (requires minimum 2 flips)
+            this.cashoutBtn.disabled = true;
+
             this.updateGameInfo();
             this.updatePlayerInfo();
             this.updateWalletDisplay();
@@ -607,6 +611,13 @@ class BombFlipBettingGame {
             return;
         }
 
+        // Check minimum flip requirement and show message
+        if (this.safeCardsFlipped < 2) {
+            const remaining = 2 - this.safeCardsFlipped;
+            this.showMessage(`🎯 Flip at least ${remaining} more card${remaining > 1 ? 's' : ''} before cashing out!`, 'lose');
+            return;
+        }
+
         const winnings = this.currentStake * this.currentMultiplier;
         const profit = winnings - this.currentStake;
         this.wallet += winnings;
@@ -749,6 +760,9 @@ class BombFlipBettingGame {
         this.currentMultiplierElement.textContent = `${this.currentMultiplier.toFixed(2)}x`;
         this.potentialWinningsElement.textContent = `₦${(this.currentStake * this.currentMultiplier).toFixed(2)}`;
         this.safeCardsElement.textContent = this.safeCardsFlipped;
+
+        // Enable cashout only after at least 2 flips
+        this.cashoutBtn.disabled = this.safeCardsFlipped < 2;
     }
 
     updatePlayerInfo() {
