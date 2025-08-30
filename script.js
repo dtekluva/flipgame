@@ -4,8 +4,8 @@ class BombFlipBettingGame {
         this.config = {
             startingMultiplier: 1.0,
             multiplierIncrement: 0.1,
-            startingWallet: 1000,
-            minStake: 1,
+            startingWallet: 10000,
+            minStake: 200,
             maxStake: 1000,
             apiBaseUrl: 'https://flip.pbxl.cc/api'
         };
