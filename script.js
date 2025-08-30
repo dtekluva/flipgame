@@ -494,6 +494,7 @@ class BombFlipBettingGame {
         this.gameBoard.style.display = 'grid'; // Ensure it's visible
 
         let cardsCreated = 0;
+        let cardNumber = 1; // Start numbering from 1
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 try {
@@ -502,10 +503,15 @@ class BombFlipBettingGame {
                     card.dataset.row = row;
                     card.dataset.col = col;
 
+                    // Add lottery-style number to each card
+                    card.textContent = cardNumber;
+                    card.dataset.cardNumber = cardNumber;
+
                     card.addEventListener('click', () => this.flipCard(row, col));
 
                     this.gameBoard.appendChild(card);
                     cardsCreated++;
+                    cardNumber++;
                 } catch (error) {
                     console.error('❌ Error creating card:', error);
                 }
