@@ -20,7 +20,7 @@ class GameEventInline(admin.TabularInline):
 class GameSessionAdmin(admin.ModelAdmin):
     """Admin interface for GameSession"""
 
-    list_display = ('id', 'username', 'user_id', 'stake', 'status', 'created_at', 'ended_at')
+    list_display = ('id', 'username', 'user_id', 'stake', 'total_winnings', 'final_wallet_balance', 'status', 'created_at', 'ended_at')
     list_filter = ('status', 'created_at', 'grid_size', 'bomb_probability')
     search_fields = ('username', 'user_id', 'id')
     readonly_fields = ('id', 'created_at', 'ended_at')
@@ -31,6 +31,9 @@ class GameSessionAdmin(admin.ModelAdmin):
         }),
         ('Game Settings', {
             'fields': ('grid_size', 'bomb_probability', 'stake', 'starting_balance')
+        }),
+        ('Game Results', {
+            'fields': ('total_winnings', 'final_wallet_balance')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'ended_at'),

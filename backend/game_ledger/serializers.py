@@ -23,8 +23,8 @@ class GameSessionSerializer(serializers.ModelSerializer):
         model = GameSession
         fields = [
             'id', 'user_id', 'username', 'starting_balance', 'stake',
-            'grid_size', 'bomb_probability', 'status',
-            'created_at', 'ended_at', 'events'
+            'grid_size', 'bomb_probability', 'status', 'total_winnings',
+            'final_wallet_balance', 'created_at', 'ended_at', 'events'
         ]
         read_only_fields = ['id', 'created_at', 'ended_at']
 
@@ -79,6 +79,18 @@ class GameEventCreateSerializer(serializers.Serializer):
         max_length=10,
         required=False,
         allow_blank=True,
+        allow_null=True
+    )
+    total_winnings = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        allow_null=True
+    )
+    final_wallet_balance = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
         allow_null=True
     )
 

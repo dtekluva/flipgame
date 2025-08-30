@@ -33,6 +33,20 @@ class GameSession(models.Model):
         default='ACTIVE',
         help_text="Current status of the game session"
     )
+    total_winnings = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Total amount won (0 if bomb hit, stake * multiplier if cashed out)"
+    )
+    final_wallet_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Player's wallet balance after the game ended"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True, help_text="When the game ended")
 

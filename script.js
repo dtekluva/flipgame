@@ -544,7 +544,9 @@ class BombFlipBettingGame {
             await this.logGameEvent('BOMB_HIT', {
                 cell_position: cellPosition,
                 balance: parseFloat(this.wallet.toFixed(2)),
-                multiplier: parseFloat(this.currentMultiplier.toFixed(2))
+                multiplier: parseFloat(this.currentMultiplier.toFixed(2)),
+                total_winnings: 0.00, // Lost everything
+                final_wallet_balance: parseFloat(this.wallet.toFixed(2))
             });
 
             this.showMessage(`💥 BOOM! You hit a bomb and lost ₦${this.currentStake.toFixed(2)}!`, 'lose');
@@ -580,7 +582,9 @@ class BombFlipBettingGame {
                 await this.logGameEvent('CASHOUT', {
                     amount: parseFloat(winnings.toFixed(2)),
                     balance: parseFloat(this.wallet.toFixed(2)),
-                    multiplier: parseFloat(this.currentMultiplier.toFixed(2))
+                    multiplier: parseFloat(this.currentMultiplier.toFixed(2)),
+                    total_winnings: parseFloat(winnings.toFixed(2)),
+                    final_wallet_balance: parseFloat(this.wallet.toFixed(2))
                 });
 
                 // Show winnings display
@@ -606,7 +610,9 @@ class BombFlipBettingGame {
         await this.logGameEvent('CASHOUT', {
             amount: parseFloat(winnings.toFixed(2)),
             balance: parseFloat(this.wallet.toFixed(2)),
-            multiplier: parseFloat(this.currentMultiplier.toFixed(2))
+            multiplier: parseFloat(this.currentMultiplier.toFixed(2)),
+            total_winnings: parseFloat(winnings.toFixed(2)),
+            final_wallet_balance: parseFloat(this.wallet.toFixed(2))
         });
 
         // Show winnings display

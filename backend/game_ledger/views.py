@@ -97,6 +97,10 @@ def log_game_event(request):
     validated_data = serializer.validated_data
     session_id = validated_data.pop('session_id')
 
+    # Extract session-level fields
+    total_winnings = validated_data.pop('total_winnings', None)
+    final_wallet_balance = validated_data.pop('final_wallet_balance', None)
+
     # Get the game session
     try:
         game_session = GameSession.objects.get(id=session_id)
@@ -113,7 +117,7 @@ def log_game_event(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Create the game event
+    # Create the game event (without session-level fields)
     game_event = GameEvent.objects.create(
         session=game_session,
         **validated_data
@@ -121,8 +125,20 @@ def log_game_event(request):
 
     # Update session status if this is a terminal event
     if validated_data['event_type'] in ['CASHOUT', 'BOMB_HIT']:
-        game_session.status = validated_data['event_type']
+        # Map event types to session status
+        status_mapping = {
+            'CASHOUT': 'CASHED_OUT',
+            'BOMB_HIT': 'BOMB_HIT'
+        }
+        game_session.status = status_mapping[validated_data['event_type']]
         game_session.ended_at = timezone.now()
+
+        # Update total winnings and final wallet balance
+        if total_winnings is not None:
+            game_session.total_winnings = total_winnings
+        if final_wallet_balance is not None:
+            game_session.final_wallet_balance = final_wallet_balance
+
         game_session.save()
 
     return Response({
