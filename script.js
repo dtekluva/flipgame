@@ -37,6 +37,9 @@ class BombFlipBettingGame {
         this.initEventListeners();
         this.updateWalletDisplay();
 
+        // Initialize bomb rate display
+        this.updateBombRateDisplay();
+
         // Debug: Monitor game board changes
         this.setupGameBoardMonitor();
     }
@@ -244,7 +247,7 @@ class BombFlipBettingGame {
         this.usernameInput = document.getElementById('username-input');
         this.stakeInput = document.getElementById('stake-input');
         this.gridSizeSelect = document.getElementById('grid-size');
-        this.bombProbabilitySelect = document.getElementById('bomb-probability');
+        this.bombRateText = document.getElementById('bomb-rate-text');
         this.startGameBtn = document.getElementById('start-game-btn');
 
         // Game info elements
@@ -273,10 +276,15 @@ class BombFlipBettingGame {
         });
         this.soundToggleBtn.addEventListener('click', () => this.toggleSound());
 
-        // Update max stake when wallet changes
+        // Update max stake when wallet changes and show dynamic bomb rate
         this.stakeInput.addEventListener('input', () => {
             const maxStake = Math.min(this.wallet, this.config.maxStake);
             this.stakeInput.max = maxStake;
+
+            // Update bomb rate display in real-time
+            const currentStake = parseFloat(this.stakeInput.value) || this.config.minStake;
+            const bombRate = this.calculateDynamicBombProbability(currentStake);
+            this.bombRateText.textContent = `${bombRate.toFixed(1)}%`;
         });
 
         // Generate random username if empty
@@ -299,6 +307,49 @@ class BombFlipBettingGame {
         const noun = nouns[Math.floor(Math.random() * nouns.length)];
         const number = Math.floor(Math.random() * 999) + 1;
         return `${adjective}${noun}${number}`;
+    }
+
+    calculateDynamicBombProbability(stakeAmount) {
+        // Base bomb probability ranges
+        const minBombRate = 5; // 5% minimum
+        const maxBombRate = 30; // 30% maximum
+
+        // Stake thresholds
+        const lowStakeThreshold = 300;
+        const highStakeThreshold = 600;
+
+        let bombProbability;
+
+        if (stakeAmount <= lowStakeThreshold) {
+            // Low stakes: 5-15% bomb rate (very favorable to player)
+            const stakeRatio = stakeAmount / lowStakeThreshold;
+            bombProbability = minBombRate + (stakeRatio * 10); // 5% to 15%
+        } else if (stakeAmount <= highStakeThreshold) {
+            // Medium stakes: 15-22% bomb rate (moderate risk)
+            const stakeRatio = (stakeAmount - lowStakeThreshold) / (highStakeThreshold - lowStakeThreshold);
+            bombProbability = 15 + (stakeRatio * 7); // 15% to 22%
+        } else {
+            // High stakes: 22-30% bomb rate (maximum risk for maximum stakes)
+            const excessStake = stakeAmount - highStakeThreshold;
+            const maxExcess = this.config.maxStake - highStakeThreshold;
+            const stakeRatio = Math.min(excessStake / maxExcess, 1);
+            bombProbability = 22 + (stakeRatio * 8); // 22% to 30%
+        }
+
+        // Ensure we stay within bounds
+        bombProbability = Math.max(minBombRate, Math.min(maxBombRate, bombProbability));
+
+        // Add randomization: ±10% variation around the calculated rate
+        const randomVariation = (Math.random() - 0.5) * 20; // Random between -10 and +10
+        const finalBombRate = bombProbability + randomVariation;
+
+        // Ensure final rate stays within absolute bounds (3% minimum, 40% maximum for safety)
+        const absoluteMin = 3;
+        const absoluteMax = 40;
+        const clampedBombRate = Math.max(absoluteMin, Math.min(absoluteMax, finalBombRate));
+
+        console.log(`💣 Dynamic bomb calculation: Stake ₦${stakeAmount} → Base: ${bombProbability.toFixed(1)}% → Final: ${clampedBombRate.toFixed(1)}% (±${randomVariation.toFixed(1)}%)`);
+        return Math.round(clampedBombRate * 10) / 10; // Round to 1 decimal place
     }
 
     async apiCall(endpoint, method = 'GET', data = null) {
@@ -367,8 +418,14 @@ class BombFlipBettingGame {
 
             // Get game settings
             this.gridSize = parseInt(this.gridSizeSelect.value);
-            this.bombProbability = parseInt(this.bombProbabilitySelect.value);
-            console.log('⚙️ Game settings:', { gridSize: this.gridSize, bombProbability: this.bombProbability });
+
+            // Calculate dynamic bomb probability based on stake amount
+            this.bombProbability = this.calculateDynamicBombProbability(stakeAmount);
+            console.log('⚙️ Game settings:', {
+                gridSize: this.gridSize,
+                bombProbability: this.bombProbability,
+                stakeAmount: stakeAmount
+            });
 
             // Initialize game state FIRST (don't wait for backend)
             this.currentStake = stakeAmount;
@@ -781,6 +838,14 @@ class BombFlipBettingGame {
 
         if (this.wallet < this.config.minStake) {
             this.showMessage('💸 Wallet empty! Refresh the page to reset your wallet.', 'lose');
+        }
+    }
+
+    updateBombRateDisplay() {
+        const currentStake = parseFloat(this.stakeInput.value) || this.config.minStake;
+        const bombRate = this.calculateDynamicBombProbability(currentStake);
+        if (this.bombRateText) {
+            this.bombRateText.textContent = `${bombRate.toFixed(1)}%`;
         }
     }
 

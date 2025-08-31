@@ -152,6 +152,21 @@ h1 {
     font-weight: normal;
 }
 
+/* Bomb Info Display */
+.bomb-info-display {
+    padding: 10px 15px;
+    border: 2px solid #e74c3c;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+    font-weight: bold;
+    font-family: 'Orbitron', monospace;
+    min-width: 120px;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
 /* Game Info Styles */
 .game-info {
     background: #ecf0f1;
