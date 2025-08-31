@@ -345,7 +345,7 @@ class BombFlipBettingGame {
 
         // Ensure final rate stays within absolute bounds (3% minimum, 40% maximum for safety)
         const absoluteMin = 3;
-        const absoluteMax = 40;
+        const absoluteMax = 25;
         const clampedBombRate = Math.max(absoluteMin, Math.min(absoluteMax, finalBombRate));
 
         console.log(`💣 Dynamic bomb calculation: Stake ₦${stakeAmount} → Base: ${bombProbability.toFixed(1)}% → Final: ${clampedBombRate.toFixed(1)}% (±${randomVariation.toFixed(1)}%)`);
