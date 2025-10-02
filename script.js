@@ -7,7 +7,7 @@ class BombFlipBettingGame {
             startingWallet: 10000,
             allowedStakes: [100, 200],
             allowedBombRates: [15, 25],
-            apiBaseUrl: 'http://localhost:8000/api'
+            apiBaseUrl: 'http://flip.pbxl.cc/api'
         };
 
         // Game state
