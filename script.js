@@ -1,13 +1,13 @@
 class BombFlipBettingGame {
     constructor() {
-        // Game configuration (easily configurable)
+        // Game configuration (simplified system)
         this.config = {
             startingMultiplier: 1.0,
             multiplierIncrement: 0.05,
             startingWallet: 10000,
-            minStake: 200,
-            maxStake: 1000,
-            apiBaseUrl: 'https://flip.pbxl.cc/api'
+            allowedStakes: [100, 200],
+            allowedBombRates: [15, 25],
+            apiBaseUrl: 'http://localhost:8000/api'
         };
 
         // Game state
@@ -37,8 +37,8 @@ class BombFlipBettingGame {
         this.initEventListeners();
         this.updateWalletDisplay();
 
-        // Initialize bomb rate display
-        this.updateBombRateDisplay();
+        // Load saved username from localStorage
+        this.loadSavedUsername();
 
         // Debug: Monitor game board changes
         this.setupGameBoardMonitor();
@@ -246,8 +246,8 @@ class BombFlipBettingGame {
         // Setup elements
         this.usernameInput = document.getElementById('username-input');
         this.stakeInput = document.getElementById('stake-input');
+        this.bombRateInput = document.getElementById('bomb-rate-input');
         this.gridSizeSelect = document.getElementById('grid-size');
-        this.bombRateText = document.getElementById('bomb-rate-text');
         this.startGameBtn = document.getElementById('start-game-btn');
 
         // Game info elements
@@ -277,21 +277,33 @@ class BombFlipBettingGame {
         this.soundToggleBtn.addEventListener('click', () => this.toggleSound());
 
         // Update max stake when wallet changes and show dynamic bomb rate
-        this.stakeInput.addEventListener('input', () => {
-            const maxStake = Math.min(this.wallet, this.config.maxStake);
-            this.stakeInput.max = maxStake;
-
-            // Update bomb rate display in real-time
-            const currentStake = parseFloat(this.stakeInput.value) || this.config.minStake;
-            const bombRate = this.calculateDynamicBombProbability(currentStake);
-            this.bombRateText.textContent = `${bombRate.toFixed(1)}%`;
-        });
+        // No dynamic updates needed for fixed stake/bomb rate system
 
         // Generate random username if empty
         this.usernameInput.addEventListener('focus', () => {
             if (!this.usernameInput.value.trim()) {
                 this.usernameInput.value = this.generateRandomUsername();
             }
+        });
+
+        // Save username when user types (with debouncing)
+        let usernameTimeout;
+        this.usernameInput.addEventListener('input', () => {
+            clearTimeout(usernameTimeout);
+            usernameTimeout = setTimeout(() => {
+                const username = this.usernameInput.value.trim();
+                if (username) {
+                    this.saveUsername(username);
+                } else {
+                    // Clear saved username if input is empty
+                    try {
+                        localStorage.removeItem('bombFlipUsername');
+                        console.log('🗑️ Cleared saved username');
+                    } catch (error) {
+                        console.log('⚠️ Could not clear saved username:', error);
+                    }
+                }
+            }, 500); // Save after 500ms of no typing
         });
     }
 
@@ -309,45 +321,29 @@ class BombFlipBettingGame {
         return `${adjective}${noun}${number}`;
     }
 
-    calculateDynamicBombProbability(stakeAmount) {
-        // Base bomb probability ranges
-        const minBombRate = 3; // 3% minimum
-        const maxBombRate = 40; // 40% maximum
+    // Removed dynamic bomb calculation - now using fixed rates (15% or 25%)
 
-        // Stake range for smooth progression
-        const minStake = 200; // Starting stake
-        const maxStake = 5000; // Maximum stake for progression
-
-        let bombProbability;
-
-        if (stakeAmount >= maxStake) {
-            // Stakes above ₦5000 are capped at maximum bomb rate
-            bombProbability = maxBombRate; // 40%
-        } else {
-            // Smooth exponential progression from ₦200 (3%) to ₦5000 (40%)
-            const stakeRatio = Math.max(0, (stakeAmount - minStake) / (maxStake - minStake));
-
-            // Use exponential curve for more dramatic progression at higher stakes
-            const exponentialRatio = Math.pow(stakeRatio, 1.6);
-
-            // Calculate bomb rate: 3% + (exponential ratio * 37%) = 3% to 40%
-            bombProbability = minBombRate + (exponentialRatio * (maxBombRate - minBombRate));
+    loadSavedUsername() {
+        try {
+            const savedUsername = localStorage.getItem('bombFlipUsername');
+            if (savedUsername && savedUsername.trim()) {
+                this.usernameInput.value = savedUsername;
+                console.log('📝 Loaded saved username:', savedUsername);
+            }
+        } catch (error) {
+            console.log('⚠️ Could not load saved username:', error);
         }
+    }
 
-        // Ensure we stay within bounds
-        bombProbability = Math.max(minBombRate, Math.min(maxBombRate, bombProbability));
-
-        // Add randomization: ±10% variation around the calculated rate
-        const randomVariation = (Math.random() - 0.5) * 20; // Random between -10 and +10
-        const finalBombRate = bombProbability + randomVariation;
-
-        // Ensure final rate stays within absolute bounds (1% minimum, 50% maximum for safety)
-        const absoluteMin = 1;
-        const absoluteMax = 50;
-        const clampedBombRate = Math.max(absoluteMin, Math.min(absoluteMax, finalBombRate));
-
-        console.log(`💣 Dynamic bomb calculation: Stake ₦${stakeAmount} → Base: ${bombProbability.toFixed(1)}% → Final: ${clampedBombRate.toFixed(1)}% (±${randomVariation.toFixed(1)}%)`);
-        return Math.round(clampedBombRate * 10) / 10; // Round to 1 decimal place
+    saveUsername(username) {
+        try {
+            if (username && username.trim()) {
+                localStorage.setItem('bombFlipUsername', username.trim());
+                console.log('💾 Saved username to localStorage:', username);
+            }
+        } catch (error) {
+            console.log('⚠️ Could not save username:', error);
+        }
     }
 
     async apiCall(endpoint, method = 'GET', data = null) {
@@ -402,23 +398,40 @@ class BombFlipBettingGame {
                 this.userName = this.generateRandomUsername();
                 this.usernameInput.value = this.userName;
             }
+
+            // Save username to localStorage for future sessions
+            this.saveUsername(this.userName);
             console.log('👤 Player name:', this.userName);
 
-            // Validate stake
+            // Get selected stake and bomb rate
             const stakeAmount = parseFloat(this.stakeInput.value);
+            const bombRate = parseFloat(this.bombRateInput.value);
             console.log('💰 Stake amount:', stakeAmount, 'Wallet:', this.wallet);
+            console.log('💣 Bomb rate:', bombRate + '%');
 
-            if (isNaN(stakeAmount) || stakeAmount < this.config.minStake || stakeAmount > this.wallet) {
+            // Validate stake
+            if (!this.config.allowedStakes.includes(stakeAmount)) {
                 console.error('❌ Invalid stake amount');
-                this.showMessage(`Invalid stake! Must be between ₦${this.config.minStake} and ₦${this.wallet}`, 'lose');
+                this.showMessage(`Invalid stake! Must be ₦100 or ₦200`, 'lose');
+                return;
+            }
+
+            if (stakeAmount > this.wallet) {
+                console.error('❌ Insufficient wallet balance');
+                this.showMessage(`Insufficient balance! You have ₦${this.wallet}`, 'lose');
+                return;
+            }
+
+            // Validate bomb rate
+            if (!this.config.allowedBombRates.includes(bombRate)) {
+                console.error('❌ Invalid bomb rate');
+                this.showMessage(`Invalid bomb rate! Must be 15% or 25%`, 'lose');
                 return;
             }
 
             // Get game settings
             this.gridSize = parseInt(this.gridSizeSelect.value);
-
-            // Calculate dynamic bomb probability based on stake amount
-            this.bombProbability = this.calculateDynamicBombProbability(stakeAmount);
+            this.bombProbability = bombRate;
             console.log('⚙️ Game settings:', {
                 gridSize: this.gridSize,
                 bombProbability: this.bombProbability,
@@ -721,8 +734,7 @@ class BombFlipBettingGame {
         this.stakeInput.max = maxStake;
         this.stakeInput.value = Math.min(this.stakeInput.value, maxStake);
 
-        // Update bomb rate display for new stake amount
-        this.updateBombRateDisplay();
+        // No bomb rate display update needed for fixed system
 
         console.log('✅ Game reset complete');
     }
@@ -841,17 +853,10 @@ class BombFlipBettingGame {
             this.showMessage('💸 Wallet empty! Refresh the page to reset your wallet.', 'lose');
         }
 
-        // Update bomb rate display when wallet changes
-        this.updateBombRateDisplay();
+        // No bomb rate display update needed for fixed system
     }
 
-    updateBombRateDisplay() {
-        const currentStake = parseFloat(this.stakeInput.value) || this.config.minStake;
-        const bombRate = this.calculateDynamicBombProbability(currentStake);
-        if (this.bombRateText) {
-            this.bombRateText.textContent = `${bombRate.toFixed(1)}%`;
-        }
-    }
+    // Removed updateBombRateDisplay - using fixed bomb rates now
 
     showWinnings(profit) {
         this.lastWinningsElement.textContent = `+₦${profit.toFixed(2)}`;

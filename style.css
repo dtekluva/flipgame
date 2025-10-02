@@ -282,6 +282,9 @@ h1 {
 .sound-control {
     margin-top: 10px;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 }
 
 .btn-sound {
@@ -308,6 +311,27 @@ h1 {
 
 .btn-sound.muted {
     background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+}
+
+.btn-analytics {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-analytics:hover {
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* Game Board Styles */

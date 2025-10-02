@@ -2,7 +2,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.db.models import Count, Avg, Sum, Q
+from django.http import JsonResponse
 
 from .models import GameSession, GameEvent
 from .serializers import (
@@ -171,3 +173,117 @@ def get_user_sessions(request, user_id):
     sessions = GameSession.objects.filter(user_id=user_id)
     serializer = GameSessionSerializer(sessions, many=True)
     return Response(serializer.data)
+
+
+def analytics_dashboard(request):
+    """
+    Render the analytics dashboard HTML page
+    """
+    return render(request, 'analytics/dashboard.html')
+
+
+@api_view(['GET'])
+def analytics_data(request):
+    """
+    Get analytics data for the dashboard
+
+    GET /analytics/data/
+    Response: Analytics data broken down by stake amount and bomb rate
+    """
+    # Get all sessions
+    sessions = GameSession.objects.all()
+
+    # Define our fixed combinations
+    combinations = [
+        {'stake': 100, 'bomb_rate': 15},
+        {'stake': 100, 'bomb_rate': 25},
+        {'stake': 200, 'bomb_rate': 15},
+        {'stake': 200, 'bomb_rate': 25},
+    ]
+
+    analytics_data = []
+
+    for combo in combinations:
+        # Filter sessions for this combination
+        combo_sessions = sessions.filter(
+            stake=combo['stake'],
+            bomb_probability=combo['bomb_rate']
+        )
+
+        total_sessions = combo_sessions.count()
+
+        if total_sessions > 0:
+            # Calculate statistics
+            cashed_out = combo_sessions.filter(status='CASHED_OUT').count()
+            bomb_hits = combo_sessions.filter(status='BOMB_HIT').count()
+
+            # Calculate win rate
+            win_rate = (cashed_out / total_sessions) * 100 if total_sessions > 0 else 0
+
+            # Calculate average winnings for successful cashouts
+            successful_sessions = combo_sessions.filter(status='CASHED_OUT', total_winnings__isnull=False)
+            avg_winnings = successful_sessions.aggregate(avg_win=Avg('total_winnings'))['avg_win'] or 0
+
+            # Calculate total revenue (stakes collected)
+            total_stakes = combo_sessions.aggregate(total_stakes=Sum('stake'))['total_stakes'] or 0
+
+            # Calculate total payouts
+            total_payouts = combo_sessions.filter(total_winnings__isnull=False).aggregate(
+                total_payouts=Sum('total_winnings')
+            )['total_payouts'] or 0
+
+            # Calculate house edge (profit margin)
+            house_profit = total_stakes - total_payouts
+            house_edge = (house_profit / total_stakes) * 100 if total_stakes > 0 else 0
+
+            # Get recent sessions for this combination
+            recent_sessions = combo_sessions.order_by('-created_at')[:10].values(
+                'id', 'username', 'status', 'total_winnings', 'created_at'
+            )
+
+            analytics_data.append({
+                'stake_amount': combo['stake'],
+                'bomb_rate': combo['bomb_rate'],
+                'total_sessions': total_sessions,
+                'cashed_out': cashed_out,
+                'bomb_hits': bomb_hits,
+                'win_rate': round(win_rate, 2),
+                'avg_winnings': float(avg_winnings) if avg_winnings else 0,
+                'total_stakes': float(total_stakes),
+                'total_payouts': float(total_payouts),
+                'house_profit': float(house_profit),
+                'house_edge': round(house_edge, 2),
+                'recent_sessions': list(recent_sessions)
+            })
+        else:
+            # No sessions for this combination yet
+            analytics_data.append({
+                'stake_amount': combo['stake'],
+                'bomb_rate': combo['bomb_rate'],
+                'total_sessions': 0,
+                'cashed_out': 0,
+                'bomb_hits': 0,
+                'win_rate': 0,
+                'avg_winnings': 0,
+                'total_stakes': 0,
+                'total_payouts': 0,
+                'house_profit': 0,
+                'house_edge': 0,
+                'recent_sessions': []
+            })
+
+    # Overall statistics
+    overall_stats = {
+        'total_sessions': sessions.count(),
+        'total_stakes': float(sessions.aggregate(total=Sum('stake'))['total'] or 0),
+        'total_payouts': float(sessions.filter(total_winnings__isnull=False).aggregate(
+            total=Sum('total_winnings'))['total'] or 0),
+    }
+    overall_stats['house_profit'] = overall_stats['total_stakes'] - overall_stats['total_payouts']
+    overall_stats['house_edge'] = (overall_stats['house_profit'] / overall_stats['total_stakes']) * 100 if overall_stats['total_stakes'] > 0 else 0
+
+    return JsonResponse({
+        'combinations': analytics_data,
+        'overall': overall_stats,
+        'timestamp': timezone.now().isoformat()
+    })

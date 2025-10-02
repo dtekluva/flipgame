@@ -18,7 +18,7 @@
             <div class="wallet-section">
                 <div class="wallet-display">
                     <span class="wallet-label">💰 Wallet:</span>
-                    <span id="wallet-amount">₦10000.00</span>
+                    <span id="wallet-amount">₦10,000.00</span>
                 </div>
                 <div class="winnings-display hidden" id="winnings-display">
                     <span class="winnings-label">🎉 Last Win:</span>
@@ -34,8 +34,18 @@
                         <input type="text" id="username-input" placeholder="Enter your name" maxlength="20" value="">
                     </div>
                     <div class="input-group">
-                        <label for="stake-input">Stake Amount (₦):</label>
-                        <input type="number" id="stake-input" min="200" max="1000" value="200" step="1">
+                        <label for="stake-input">Stake Amount:</label>
+                        <select id="stake-input">
+                            <option value="100">₦100</option>
+                            <option value="200" selected>₦200</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="bomb-rate-input">Bomb Rate:</label>
+                        <select id="bomb-rate-input">
+                            <option value="15" selected>15%</option>
+                            <option value="25">25%</option>
+                        </select>
                     </div>
                     <div class="input-group">
                         <label for="grid-size">Grid Size:</label>
@@ -46,12 +56,6 @@
                             <option value="6">6x6</option>
                             <option value="7">7x7</option>
                         </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="bomb-info">Bomb Rate:</label>
-                        <div id="bomb-info" class="bomb-info-display">
-                            <span id="bomb-rate-text">Auto-calculated</span>
-                        </div>
                     </div>
                 </div>
                 <button id="start-game-btn" class="btn btn-primary">Start Game</button>
@@ -87,6 +91,7 @@
                 </div>
                 <div class="sound-control">
                     <button id="sound-toggle-btn" class="btn-sound" title="Toggle Sound">🔊</button>
+                    <!-- <a href="analytics.html" class="btn-analytics" title="View Analytics">📊</a> -->
                 </div>
             </div>
         </header>

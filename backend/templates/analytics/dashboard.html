@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💣 Bomb Flip Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard-content {
+            padding: 30px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .overall-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .combinations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .combination-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 2px solid #e9ecef;
+        }
+        
+        .combination-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .combination-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .combination-badge {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .mini-stat {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .mini-stat .label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .mini-stat .value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .win-rate {
+            color: #27ae60 !important;
+        }
+        
+        .house-edge {
+            color: #e74c3c !important;
+        }
+        
+        .recent-sessions {
+            margin-top: 20px;
+        }
+        
+        .recent-sessions h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        
+        .session-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+        
+        .session-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-cashed-out {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-bomb-hit {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .combinations-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .overall-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💣 Bomb Flip Analytics Dashboard</h1>
+            <p>Real-time analytics for stake amounts and bomb rates</p>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="loading" id="loading">
+                🔄 Loading analytics data...
+            </div>
+            
+            <div id="dashboard" style="display: none;">
+                <!-- Overall Statistics -->
+                <div class="overall-stats" id="overall-stats">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Combinations Grid -->
+                <div class="combinations-grid" id="combinations-grid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="refresh-btn" onclick="loadAnalytics()">
+        🔄 Refresh Data
+    </button>
+
+    <script>
+        async function loadAnalytics() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                
+                const response = await fetch('/api/analytics/data/');
+                const data = await response.json();
+                
+                renderOverallStats(data.overall);
+                renderCombinations(data.combinations);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                document.getElementById('loading').innerHTML = '❌ Error loading data. Please try again.';
+            }
+        }
+        
+        function renderOverallStats(overall) {
+            const container = document.getElementById('overall-stats');
+            container.innerHTML = `
+                <div class="stat-card">
+                    <h3>Total Sessions</h3>
+                    <div class="value">${overall.total_sessions}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Stakes</h3>
+                    <div class="value">₦${overall.total_stakes.toLocaleString()}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Payouts</h3>
+                    <div class="value">₦${overall.total_payouts.toLocaleString()}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>House Profit</h3>
+                    <div class="value">₦${overall.house_profit.toLocaleString()}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>House Edge</h3>
+                    <div class="value">${overall.house_edge.toFixed(2)}%</div>
+                </div>
+            `;
+        }
+        
+        function renderCombinations(combinations) {
+            const container = document.getElementById('combinations-grid');
+            container.innerHTML = '';
+            
+            combinations.forEach(combo => {
+                const card = document.createElement('div');
+                card.className = 'combination-card';
+                
+                const recentSessionsHtml = combo.recent_sessions.length > 0 
+                    ? combo.recent_sessions.map(session => `
+                        <div class="session-item">
+                            <span>${session.username}</span>
+                            <span class="session-status status-${session.status.toLowerCase().replace('_', '-')}">
+                                ${session.status.replace('_', ' ')}
+                            </span>
+                            <span>₦${session.total_winnings || 0}</span>
+                        </div>
+                    `).join('')
+                    : '<div class="no-data">No recent sessions</div>';
+                
+                card.innerHTML = `
+                    <div class="combination-header">
+                        <div class="combination-title">₦${combo.stake_amount} Stake</div>
+                        <div class="combination-badge">${combo.bomb_rate}% Bombs</div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="mini-stat">
+                            <div class="label">Sessions</div>
+                            <div class="value">${combo.total_sessions}</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="label">Cashed Out</div>
+                            <div class="value">${combo.cashed_out}</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="label">Bomb Hits</div>
+                            <div class="value">${combo.bomb_hits}</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="label">Win Rate</div>
+                            <div class="value win-rate">${combo.win_rate}%</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="label">Avg Win</div>
+                            <div class="value">₦${combo.avg_winnings.toFixed(0)}</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="label">House Edge</div>
+                            <div class="value house-edge">${combo.house_edge}%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-sessions">
+                        <h4>Recent Sessions</h4>
+                        <div class="session-list">
+                            ${recentSessionsHtml}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        // Load analytics on page load
+        loadAnalytics();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadAnalytics, 30000);
+    </script>
+</body>
+</html>
