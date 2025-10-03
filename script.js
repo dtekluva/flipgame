@@ -8,7 +8,7 @@ class BombFlipBettingGame {
             allowedStakes: [100, 200],
             allowedBombRates: [15, 25],
             minFlipsForCashout: 5,
-            apiBaseUrl: 'http://flip.pbxl.cc/api'
+            apiBaseUrl: 'https://flip.pbxl.cc/api'
         };
 
         // Game state
