@@ -598,8 +598,11 @@ class BombFlipBettingGame {
 
     placeBombs() {
         console.log('💣 Placing bombs...', { bombProbability: this.bombProbability });
+        const totalCells = this.gridSize * this.gridSize;
+        const minBombs = Math.ceil(totalCells * (this.bombProbability / 100));
         let bombsPlaced = 0;
 
+        // First pass: Place bombs using probability
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 // Each cell has bombProbability% chance of being a bomb
@@ -610,7 +613,32 @@ class BombFlipBettingGame {
             }
         }
 
-        console.log(`💣 Bombs placed: ${bombsPlaced} out of ${this.gridSize * this.gridSize} cells`);
+        // Second pass: Ensure minimum bomb count is met
+        if (bombsPlaced-1 < minBombs) {
+            const additionalBombs = minBombs - bombsPlaced;
+            console.log(`💣 Adding ${additionalBombs} more bombs to meet minimum of ${minBombs}`);
+
+            // Get all non-bomb cells
+            const availableCells = [];
+            for (let row = 0; row < this.gridSize; row++) {
+                for (let col = 0; col < this.gridSize; col++) {
+                    if (!this.board[row][col].isBomb) {
+                        availableCells.push({ row, col });
+                    }
+                }
+            }
+
+            // Randomly select additional cells to be bombs
+            for (let i = 0; i < additionalBombs && availableCells.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * availableCells.length);
+                const cell = availableCells.splice(randomIndex, 1)[0];
+                this.board[cell.row][cell.col].isBomb = true;
+                bombsPlaced++;
+            }
+        }
+
+        const actualRate = ((bombsPlaced / totalCells) * 100).toFixed(1);
+        console.log(`💣 Bombs placed: ${bombsPlaced} out of ${totalCells} cells (${actualRate}% actual rate, ${this.bombProbability}% target)`);
     }
 
     renderBoard() {
