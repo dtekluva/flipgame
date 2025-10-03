@@ -136,7 +136,7 @@ function placeBombs(finalBombRate) {
 - **Example**: 1.00x → 1.05x → 1.10x → 1.15x → 1.20x...
 
 ### 5. **Cashout Rules**
-- **Minimum Requirement**: Must flip at least 2 safe cards before cashing out
+- **Minimum Requirement**: Must flip at least 5 safe cards before cashing out
 - **Early Cashout Attempt**: Shows warning message with remaining flips needed
 - **Cashout Formula**: Winnings = Stake × Current Multiplier
 - **Profit**: Winnings - Original Stake
@@ -144,7 +144,7 @@ function placeBombs(finalBombRate) {
 ### 6. **Winning Conditions**
 
 #### **💰 Cash Out (Player Choice)**
-- Click "Cash Out" after flipping 2+ safe cards
+- Click "Cash Out" after flipping 5+ safe cards
 - Receive: Stake × Current Multiplier
 - Game ends successfully
 
@@ -201,7 +201,7 @@ function placeBombs(finalBombRate) {
 1. **Start Small**: Begin with lower stakes to learn the game
 2. **Watch Bomb Rates**: Higher stakes = higher bomb probability
 3. **Know When to Cash Out**: Don't get greedy - secure profits early
-4. **Minimum Flips**: Remember you need 2 safe cards minimum
+4. **Minimum Flips**: Remember you need 5 safe cards minimum
 
 ### **Stake Strategy**
 - **Low Stakes (₦200-₦500)**: Very safe, good for beginners

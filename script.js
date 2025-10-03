@@ -3,10 +3,11 @@ class BombFlipBettingGame {
         // Game configuration (simplified system)
         this.config = {
             startingMultiplier: 1.0,
-            multiplierIncrement: 0.05,
+            multiplierIncrement: 0.15,
             startingWallet: 10000,
             allowedStakes: [100, 200],
             allowedBombRates: [15, 25],
+            minFlipsForCashout: 5,
             apiBaseUrl: 'http://flip.pbxl.cc/api'
         };
 
@@ -37,8 +38,10 @@ class BombFlipBettingGame {
         this.initEventListeners();
         this.updateWalletDisplay();
 
-        // Load saved username from localStorage
+        // Load saved username, stake, and bomb rate from localStorage
         this.loadSavedUsername();
+        this.loadSavedStake();
+        this.loadSavedBombRate();
 
         // Debug: Monitor game board changes
         this.setupGameBoardMonitor();
@@ -305,6 +308,22 @@ class BombFlipBettingGame {
                 }
             }, 500); // Save after 500ms of no typing
         });
+
+        // Save stake amount when user changes selection
+        this.stakeInput.addEventListener('change', () => {
+            const stakeAmount = parseFloat(this.stakeInput.value);
+            if (stakeAmount && this.config.allowedStakes.includes(stakeAmount)) {
+                this.saveStake(stakeAmount);
+            }
+        });
+
+        // Save bomb rate when user changes selection
+        this.bombRateInput.addEventListener('change', () => {
+            const bombRate = parseFloat(this.bombRateInput.value);
+            if (bombRate && this.config.allowedBombRates.includes(bombRate)) {
+                this.saveBombRate(bombRate);
+            }
+        });
     }
 
     generateUserId() {
@@ -343,6 +362,52 @@ class BombFlipBettingGame {
             }
         } catch (error) {
             console.log('⚠️ Could not save username:', error);
+        }
+    }
+
+    loadSavedStake() {
+        try {
+            const savedStake = localStorage.getItem('bombFlipStake');
+            if (savedStake && this.config.allowedStakes.includes(parseInt(savedStake))) {
+                this.stakeInput.value = savedStake;
+                console.log('💰 Loaded saved stake amount:', savedStake);
+            }
+        } catch (error) {
+            console.log('⚠️ Could not load saved stake:', error);
+        }
+    }
+
+    saveStake(stakeAmount) {
+        try {
+            if (stakeAmount && this.config.allowedStakes.includes(parseInt(stakeAmount))) {
+                localStorage.setItem('bombFlipStake', stakeAmount.toString());
+                console.log('💾 Saved stake amount to localStorage:', stakeAmount);
+            }
+        } catch (error) {
+            console.log('⚠️ Could not save stake amount:', error);
+        }
+    }
+
+    loadSavedBombRate() {
+        try {
+            const savedBombRate = localStorage.getItem('bombFlipBombRate');
+            if (savedBombRate && this.config.allowedBombRates.includes(parseInt(savedBombRate))) {
+                this.bombRateInput.value = savedBombRate;
+                console.log('💣 Loaded saved bomb rate:', savedBombRate + '%');
+            }
+        } catch (error) {
+            console.log('⚠️ Could not load saved bomb rate:', error);
+        }
+    }
+
+    saveBombRate(bombRate) {
+        try {
+            if (bombRate && this.config.allowedBombRates.includes(parseInt(bombRate))) {
+                localStorage.setItem('bombFlipBombRate', bombRate.toString());
+                console.log('💾 Saved bomb rate to localStorage:', bombRate + '%');
+            }
+        } catch (error) {
+            console.log('⚠️ Could not save bomb rate:', error);
         }
     }
 
@@ -406,6 +471,11 @@ class BombFlipBettingGame {
             // Get selected stake and bomb rate
             const stakeAmount = parseFloat(this.stakeInput.value);
             const bombRate = parseFloat(this.bombRateInput.value);
+
+            // Save stake amount and bomb rate to localStorage for future sessions
+            this.saveStake(stakeAmount);
+            this.saveBombRate(bombRate);
+
             console.log('💰 Stake amount:', stakeAmount, 'Wallet:', this.wallet);
             console.log('💣 Bomb rate:', bombRate + '%');
 
@@ -457,7 +527,7 @@ class BombFlipBettingGame {
             this.gameInfo.classList.remove('hidden');
             this.gameMessageElement.classList.add('hidden');
 
-            // Disable cashout button initially (requires minimum 2 flips)
+            // Disable cashout button initially (requires minimum 5 flips)
             this.cashoutBtn.disabled = true;
 
             this.updateGameInfo();
@@ -680,8 +750,8 @@ class BombFlipBettingGame {
         }
 
         // Check minimum flip requirement and show message
-        if (this.safeCardsFlipped < 2) {
-            const remaining = 2 - this.safeCardsFlipped;
+        if (this.safeCardsFlipped < this.config.minFlipsForCashout) {
+            const remaining = this.config.minFlipsForCashout - this.safeCardsFlipped;
             this.showMessage(`🎯 Flip at least ${remaining} more card${remaining > 1 ? 's' : ''} before cashing out!`, 'lose');
             return;
         }
@@ -831,8 +901,8 @@ class BombFlipBettingGame {
         this.potentialWinningsElement.textContent = `₦${(this.currentStake * this.currentMultiplier).toFixed(2)}`;
         this.safeCardsElement.textContent = this.safeCardsFlipped;
 
-        // Enable cashout only after at least 2 flips
-        this.cashoutBtn.disabled = this.safeCardsFlipped < 2;
+        // Enable cashout only after at least 5 flips
+        this.cashoutBtn.disabled = this.safeCardsFlipped < this.config.minFlipsForCashout;
     }
 
     updatePlayerInfo() {

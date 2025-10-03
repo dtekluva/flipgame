@@ -20,7 +20,7 @@
 - **Higher stakes = more bombs** (3% to 40% bomb rate)
 - **Higher stakes = Higher Multipliers** (0.05x to 0.2x Win multiplier)
 - **Progressive rewards**: Each safe card adds 0.05x to multiplier (Based on the multiplier)
-- **Minimum 2 flips** required before cashing out
+- **Minimum 5 flips** required before cashing out
 - **All-or-nothing**: Hit bomb = lose entire stake
 
 ## 🎯 Game Logic Overview
@@ -67,7 +67,7 @@
 - **Stake Input**: Slider or input for bet amount
 - **Bomb Rate Display**: Live calculation based on stake
 - **Game Stats**: Current multiplier, potential winnings, safe cards count
-- **Controls**: Cash Out button (disabled until 2+ flips), New Game button
+- **Controls**: Cash Out button (disabled until 5+ flips), New Game button
 - **Sound Toggle**: Enable/disable audio effects
 
 ## 🌐 Backend Integration
@@ -146,11 +146,11 @@ The app needs to track:
 - **Calculate Bomb Rate**: Based on stake amount (3-40%)
 - **Generate Board**: Place bombs randomly based on calculated rate
 - **Handle Card Flip**: Check bomb/safe, update multiplier, play sound
-- **Check Cash Out**: Ensure minimum 2 flips, calculate winnings
+- **Check Cash Out**: Ensure minimum 5 flips, calculate winnings
 - **Reset Game**: Clear board, reset multiplier, return to setup
 
 ### Win/Loss Conditions
-- **Win**: Player cashes out after 2+ safe cards → Receive stake × multiplier
+- **Win**: Player cashes out after 5+ safe cards → Receive stake × multiplier
 - **Loss**: Player hits bomb → Lose entire stake amount
 - **Perfect Game**: Flip all safe cards → Automatic cashout with celebration
 
