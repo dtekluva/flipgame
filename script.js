@@ -3,7 +3,7 @@ class BombFlipBettingGame {
         // Game configuration (simplified system)
         this.config = {
             startingMultiplier: 1.0,
-            multiplierIncrement: 0.15,
+            multiplierIncrement: 0.1,
             startingWallet: 10000,
             allowedStakes: [100, 200],
             allowedBombRates: [15, 25],
