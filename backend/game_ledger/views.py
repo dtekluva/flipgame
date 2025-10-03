@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404, render
 from django.db.models import Count, Avg, Sum, Q
 from django.http import JsonResponse
+from datetime import datetime
 
 from .models import GameSession, GameEvent
 from .serializers import (
@@ -190,8 +191,9 @@ def analytics_data(request):
     GET /analytics/data/
     Response: Analytics data broken down by stake amount and bomb rate
     """
-    # Get all sessions
-    sessions = GameSession.objects.all()
+    # Get sessions from October 2, 2025 onwards
+    start_date = datetime(2025, 10, 2, tzinfo=timezone.utc)
+    sessions = GameSession.objects.filter(created_at__gte=start_date)
 
     # Define our fixed combinations
     combinations = [
