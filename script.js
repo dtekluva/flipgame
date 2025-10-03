@@ -599,7 +599,20 @@ class BombFlipBettingGame {
     placeBombs() {
         console.log('💣 Placing bombs...', { bombProbability: this.bombProbability });
         const totalCells = this.gridSize * this.gridSize;
-        const minBombs = Math.ceil(totalCells * (this.bombProbability / 100));
+        var minBombs = Math.ceil(totalCells * (this.bombProbability / 100));
+        console.log("MIN BOMBS::::", minBombs, this.bombProbability , totalCells)
+        var check = (minBombs/totalCells)
+        var checkpercent = check * 100
+        if (checkpercent - this.bombProbability > 2){
+            minBombs = minBombs - 1
+        }
+        console.log("NEW CHECKS   :::", check*100)
+        console.log("NEW MIN BOMBS:::", minBombs)
+        console.log("NEW MIN BOMBS:::", minBombs)
+        console.log("NEW MIN BOMBS:::", minBombs)
+        console.log("NEW MIN BOMBS:::", minBombs)
+        console.log("NEW MIN BOMBS:::", minBombs)
+        console.log("NEW MIN BOMBS:::", minBombs)
         let bombsPlaced = 0;
 
         // First pass: Place bombs using probability
@@ -614,7 +627,7 @@ class BombFlipBettingGame {
         }
 
         // Second pass: Ensure minimum bomb count is met
-        if (bombsPlaced-1 < minBombs) {
+        if (bombsPlaced < minBombs) {
             const additionalBombs = minBombs - bombsPlaced;
             console.log(`💣 Adding ${additionalBombs} more bombs to meet minimum of ${minBombs}`);
 
