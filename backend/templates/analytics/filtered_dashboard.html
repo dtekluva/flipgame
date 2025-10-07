@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtered Analytics Dashboard - Bomb Flip Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .filters {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .filters h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .custom-dates {
+            display: none;
+            gap: 15px;
+        }
+
+        .custom-dates.show {
+            display: flex;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .overall-stats {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .overall-stats h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card.profit {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .stat-card.sessions {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .stat-card.winrate {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .combinations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .combination-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .combination-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .combination-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .combination-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .combination-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-item .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .recent-sessions {
+            margin-top: 20px;
+        }
+
+        .recent-sessions h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+
+        .session-outcome {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .session-outcome.WIN {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .session-outcome.LOSS {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .session-outcome.PERFECT {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .custom-dates {
+                flex-direction: column;
+            }
+
+            .combinations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Filtered Analytics Dashboard</h1>
+            <p>Advanced game analytics with flexible filtering options</p>
+        </div>
+
+        <div class="filters">
+            <h2>📊 Filter Options</h2>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="dateRange">Date Range:</label>
+                    <select id="dateRange">
+                        <option value="today">Today</option>
+                        <option value="week">Last 7 Days</option>
+                        <option value="month" selected>Last 30 Days</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+
+                <div class="custom-dates" id="customDates">
+                    <div class="filter-group">
+                        <label for="startDate">Start Date:</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="endDate">End Date:</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="gameType">Game Type:</label>
+                    <select id="gameType">
+                        <option value="">All Game Types</option>
+                        <option value="bomb_flip">Bomb Flip</option>
+                        <option value="classic">Classic</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="bombRate">Bomb Rate:</label>
+                    <select id="bombRate">
+                        <option value="">All Rates</option>
+                        <option value="15">15%</option>
+                        <option value="25">25%</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <button class="btn" onclick="loadAnalytics()">🔄 Update Data</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="overall-stats">
+            <h2>📈 Overall Statistics</h2>
+            <div class="stats-grid" id="overallStats">
+                <!-- Overall stats will be populated here -->
+            </div>
+        </div>
+
+        <div id="analyticsContent">
+            <div class="loading">
+                🔄 Loading analytics data...
+            </div>
+        </div>
+
+        <div class="refresh-info">
+            <p>📅 Last updated: <span id="lastUpdated">Never</span></p>
+            <p>🔄 Auto-refresh every 60 seconds</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://flip.pbxl.cc/api';
+        let autoRefreshInterval;
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            loadAnalytics();
+            startAutoRefresh();
+        });
+
+        function setupEventListeners() {
+            // Show/hide custom date inputs
+            document.getElementById('dateRange').addEventListener('change', function() {
+                const customDates = document.getElementById('customDates');
+                if (this.value === 'custom') {
+                    customDates.classList.add('show');
+                } else {
+                    customDates.classList.remove('show');
+                }
+            });
+
+            // Set default dates for custom range
+            const today = new Date().toISOString().split('T')[0];
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            document.getElementById('endDate').value = today;
+            document.getElementById('startDate').value = weekAgo;
+        }
+
+        async function loadAnalytics() {
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams();
+                
+                // Add filters
+                const dateRange = document.getElementById('dateRange').value;
+                params.append('date_range', dateRange);
+                
+                if (dateRange === 'custom') {
+                    const startDate = document.getElementById('startDate').value;
+                    const endDate = document.getElementById('endDate').value;
+                    if (startDate) params.append('start_date', startDate);
+                    if (endDate) params.append('end_date', endDate);
+                }
+                
+                const gameType = document.getElementById('gameType').value;
+                if (gameType) params.append('game_type', gameType);
+                
+                const bombRate = document.getElementById('bombRate').value;
+                if (bombRate) params.append('bomb_rate', bombRate);
+
+                const response = await fetch(`${API_BASE_URL}/analytics/filtered-data/?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayAnalytics(data);
+                updateLastUpdated();
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showError('Failed to load analytics data. Please try again.');
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('analyticsContent').innerHTML = `
+                <div class="loading">
+                    🔄 Loading analytics data...
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('analyticsContent').innerHTML = `
+                <div class="error">
+                    ❌ ${message}
+                </div>
+            `;
+        }
+
+        function displayAnalytics(data) {
+            displayOverallStats(data.overall);
+            displayCombinations(data.combinations);
+        }
+
+        function displayOverallStats(stats) {
+            const overallStatsContainer = document.getElementById('overallStats');
+            overallStatsContainer.innerHTML = `
+                <div class="stat-card sessions">
+                    <div class="stat-value">${stats.total_sessions}</div>
+                    <div class="stat-label">Total Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">₦${stats.total_stakes.toLocaleString()}</div>
+                    <div class="stat-label">Total Stakes</div>
+                </div>
+                <div class="stat-card profit">
+                    <div class="stat-value">₦${stats.house_profit.toLocaleString()}</div>
+                    <div class="stat-label">House Profit</div>
+                </div>
+                <div class="stat-card winrate">
+                    <div class="stat-value">${stats.house_edge.toFixed(1)}%</div>
+                    <div class="stat-label">House Edge</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total_wins}</div>
+                    <div class="stat-label">Total Wins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.overall_win_rate.toFixed(1)}%</div>
+                    <div class="stat-label">Win Rate</div>
+                </div>
+            `;
+        }
+
+        function displayCombinations(combinations) {
+            if (combinations.length === 0) {
+                document.getElementById('analyticsContent').innerHTML = `
+                    <div class="loading">
+                        📊 No data found for the selected filters.
+                    </div>
+                `;
+                return;
+            }
+
+            const combinationsHTML = combinations.map(combo => `
+                <div class="combination-card">
+                    <div class="combination-header">
+                        <div class="combination-title">
+                            ${combo.game_type.toUpperCase()} - ${combo.bomb_rate}%
+                        </div>
+                    </div>
+                    
+                    <div class="combination-stats">
+                        <div class="stat-item">
+                            <div class="value">${combo.total_sessions}</div>
+                            <div class="label">Sessions</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="value">${combo.win_rate}%</div>
+                            <div class="label">Win Rate</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="value">₦${combo.total_stakes.toLocaleString()}</div>
+                            <div class="label">Total Stakes</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="value">${combo.house_edge}%</div>
+                            <div class="label">House Edge</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="value">${combo.avg_multiplier}x</div>
+                            <div class="label">Avg Multiplier</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="value">${combo.avg_cards_flipped}</div>
+                            <div class="label">Avg Cards</div>
+                        </div>
+                    </div>
+
+                    <div class="recent-sessions">
+                        <h4>Recent Sessions (${combo.recent_sessions.length})</h4>
+                        ${combo.recent_sessions.slice(0, 5).map(session => `
+                            <div class="session-item">
+                                <span>${session.player_name}</span>
+                                <span>₦${session.stake} → ₦${session.winnings}</span>
+                                <span class="session-outcome ${session.outcome}">${session.outcome}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('analyticsContent').innerHTML = `
+                <div class="combinations-grid">
+                    ${combinationsHTML}
+                </div>
+            `;
+        }
+
+        function updateLastUpdated() {
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+        }
+
+        function startAutoRefresh() {
+            // Clear existing interval
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            // Set up auto-refresh every 60 seconds
+            autoRefreshInterval = setInterval(() => {
+                loadAnalytics();
+            }, 60000);
+        }
+
+        // Clean up interval when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

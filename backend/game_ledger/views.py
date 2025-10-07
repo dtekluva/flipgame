@@ -5,9 +5,9 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404, render
 from django.db.models import Count, Avg, Sum, Q
 from django.http import JsonResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from .models import GameSession, GameEvent
+from .models import GameSession, GameEvent, GameAnalytics
 from .serializers import (
     StartGameSerializer,
     GameEventCreateSerializer,
@@ -289,3 +289,211 @@ def analytics_data(request):
         'overall': overall_stats,
         'timestamp': timezone.now().isoformat()
     })
+
+
+@api_view(['GET'])
+def filtered_analytics_dashboard(request):
+    """
+    Render the filtered analytics dashboard HTML page
+
+    GET /analytics/filtered/
+    """
+    return render(request, 'analytics/filtered_dashboard.html')
+
+
+@api_view(['POST'])
+def submit_game_analytics(request):
+    """
+    Submit a game record for analytics tracking
+
+    POST /analytics/submit/
+    Body: {
+        "game_type": "bomb_flip",
+        "player_name": "PlayerName",
+        "session_id": "optional_session_id",
+        "stake_amount": 200.00,
+        "winning_amount": 240.00,
+        "multiplier": 1.20,
+        "bomb_rate": 15,
+        "cards_flipped": 4,
+        "game_outcome": "WIN"
+    }
+    """
+    try:
+        # Extract data from request
+        data = request.data
+
+        # Validate required fields
+        required_fields = ['game_type', 'stake_amount', 'winning_amount', 'multiplier', 'bomb_rate', 'game_outcome']
+        for field in required_fields:
+            if field not in data:
+                return Response({
+                    'error': f'Missing required field: {field}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create analytics record
+        analytics_record = GameAnalytics.objects.create(
+            game_type=data['game_type'],
+            player_name=data.get('player_name', 'Anonymous'),
+            session_id=data.get('session_id'),
+            stake_amount=data['stake_amount'],
+            winning_amount=data['winning_amount'],
+            multiplier=data['multiplier'],
+            bomb_rate=data['bomb_rate'],
+            cards_flipped=data.get('cards_flipped', 0),
+            game_outcome=data['game_outcome']
+        )
+
+        return Response({
+            'success': True,
+            'record_id': str(analytics_record.id),
+            'message': 'Game analytics record created successfully'
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({
+            'error': f'Failed to create analytics record: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def filtered_analytics_data(request):
+    """
+    Get filtered analytics data for the dashboard
+
+    GET /analytics/filtered-data/
+    Query Parameters:
+    - date_range: 'today', 'week', 'month', 'custom' (default: 'month')
+    - start_date: YYYY-MM-DD (for custom range)
+    - end_date: YYYY-MM-DD (for custom range)
+    - game_type: filter by game type (optional)
+    - bomb_rate: filter by bomb rate (optional)
+    """
+    try:
+        # Get query parameters
+        date_range = request.GET.get('date_range', 'month')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
+        game_type_filter = request.GET.get('game_type')
+        bomb_rate_filter = request.GET.get('bomb_rate')
+
+        # Calculate date range
+        now = timezone.now()
+        if date_range == 'today':
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+        elif date_range == 'week':
+            start_date = now - timedelta(days=7)
+            end_date = now
+        elif date_range == 'month':
+            start_date = now - timedelta(days=30)
+            end_date = now
+        elif date_range == 'custom':
+            if start_date_str and end_date_str:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+            else:
+                return Response({
+                    'error': 'start_date and end_date required for custom date range'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({
+                'error': 'Invalid date_range. Use: today, week, month, or custom'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Base queryset with date filter
+        queryset = GameAnalytics.objects.filter(created_at__gte=start_date, created_at__lte=end_date)
+
+        # Apply additional filters
+        if game_type_filter:
+            queryset = queryset.filter(game_type=game_type_filter)
+        if bomb_rate_filter:
+            queryset = queryset.filter(bomb_rate=int(bomb_rate_filter))
+
+        # Get unique combinations that actually exist in the filtered data
+        combinations = queryset.values('game_type', 'bomb_rate').distinct().order_by('game_type', 'bomb_rate')
+
+        analytics_data = []
+
+        # Process each existing combination
+        for combo in combinations:
+            game_type = combo['game_type']
+            bomb_rate = combo['bomb_rate']
+            combo_records = queryset.filter(game_type=game_type, bomb_rate=bomb_rate)
+
+            if combo_records.exists():
+                    total_sessions = combo_records.count()
+                    wins = combo_records.filter(game_outcome='WIN').count()
+                    losses = combo_records.filter(game_outcome='LOSS').count()
+                    perfect_games = combo_records.filter(game_outcome='PERFECT').count()
+
+                    total_stakes = float(combo_records.aggregate(total=Sum('stake_amount'))['total'] or 0)
+                    total_payouts = float(combo_records.aggregate(total=Sum('winning_amount'))['total'] or 0)
+                    avg_multiplier = float(combo_records.aggregate(avg=Avg('multiplier'))['avg'] or 0)
+                    avg_cards_flipped = float(combo_records.aggregate(avg=Avg('cards_flipped'))['avg'] or 0)
+
+                    house_profit = total_stakes - total_payouts
+                    house_edge = (house_profit / total_stakes) * 100 if total_stakes > 0 else 0
+                    win_rate = (wins / total_sessions) * 100 if total_sessions > 0 else 0
+
+                    # Recent sessions (last 10)
+                    recent_sessions = []
+                    for record in combo_records.order_by('-created_at')[:10]:
+                        recent_sessions.append({
+                            'id': str(record.id),
+                            'player_name': record.player_name or 'Anonymous',
+                            'outcome': record.game_outcome,
+                            'stake': float(record.stake_amount),
+                            'winnings': float(record.winning_amount),
+                            'multiplier': float(record.multiplier),
+                            'cards_flipped': record.cards_flipped,
+                            'created_at': record.created_at.isoformat()
+                        })
+
+                    analytics_data.append({
+                        'game_type': game_type,
+                        'bomb_rate': bomb_rate,
+                        'total_sessions': total_sessions,
+                        'wins': wins,
+                        'losses': losses,
+                        'perfect_games': perfect_games,
+                        'win_rate': round(win_rate, 2),
+                        'avg_multiplier': round(avg_multiplier, 2),
+                        'avg_cards_flipped': round(avg_cards_flipped, 1),
+                        'total_stakes': total_stakes,
+                        'total_payouts': total_payouts,
+                        'house_profit': house_profit,
+                        'house_edge': f"{house_edge:.2f}",
+                        'recent_sessions': recent_sessions
+                    })
+
+        # Overall statistics
+        overall_stats = {
+            'total_sessions': queryset.count(),
+            'total_stakes': float(queryset.aggregate(total=Sum('stake_amount'))['total'] or 0),
+            'total_payouts': float(queryset.aggregate(total=Sum('winning_amount'))['total'] or 0),
+            'total_wins': queryset.filter(game_outcome='WIN').count(),
+            'total_losses': queryset.filter(game_outcome='LOSS').count(),
+            'total_perfect_games': queryset.filter(game_outcome='PERFECT').count(),
+        }
+        overall_stats['house_profit'] = overall_stats['total_stakes'] - overall_stats['total_payouts']
+        overall_stats['house_edge'] = (overall_stats['house_profit'] / overall_stats['total_stakes']) * 100 if overall_stats['total_stakes'] > 0 else 0
+        overall_stats['overall_win_rate'] = (overall_stats['total_wins'] / overall_stats['total_sessions']) * 100 if overall_stats['total_sessions'] > 0 else 0
+
+        return JsonResponse({
+            'combinations': analytics_data,
+            'overall': overall_stats,
+            'filters': {
+                'date_range': date_range,
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat(),
+                'game_type': game_type_filter,
+                'bomb_rate': bomb_rate_filter
+            },
+            'timestamp': timezone.now().isoformat()
+        })
+
+    except Exception as e:
+        return Response({
+            'error': f'Failed to fetch analytics data: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

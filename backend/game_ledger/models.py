@@ -121,3 +121,77 @@ class GameEvent(models.Model):
 
     def __str__(self):
         return f"{self.event_type} - {self.session.username}"
+
+
+class GameAnalytics(models.Model):
+    """Model to track individual game records for analytics (separate from session tracking)"""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    game_type = models.CharField(
+        max_length=50,
+        help_text="Type/variant of the game (e.g., 'bomb_flip', 'classic', etc.)"
+    )
+    player_name = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Player's display name"
+    )
+    session_id = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Optional session identifier from external systems"
+    )
+    stake_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Amount wagered for this game"
+    )
+    winning_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Amount won (0 for losses, stake * multiplier for wins)"
+    )
+    multiplier = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=1.00,
+        help_text="Final multiplier achieved in the game"
+    )
+    bomb_rate = models.IntegerField(
+        help_text="Bomb rate percentage used (e.g., 15 for 15%)"
+    )
+    cards_flipped = models.IntegerField(
+        default=0,
+        help_text="Number of safe cards flipped before cashout/bomb"
+    )
+    game_outcome = models.CharField(
+        max_length=20,
+        choices=[
+            ('WIN', 'Win (Cashed Out)'),
+            ('LOSS', 'Loss (Bomb Hit)'),
+            ('PERFECT', 'Perfect Game'),
+        ],
+        help_text="Final outcome of the game"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Game Analytics Record"
+        verbose_name_plural = "Game Analytics Records"
+        indexes = [
+            models.Index(fields=['game_type', 'bomb_rate']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['game_type', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.game_type} - {self.player_name or 'Anonymous'} - {self.game_outcome}"
+
+    @property
+    def profit_loss(self):
+        """Calculate profit/loss for this game"""
+        return self.winning_amount - self.stake_amount
