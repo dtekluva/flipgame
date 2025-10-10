@@ -659,6 +659,7 @@
                 <thead>
                     <tr>
                         <th>Player</th>
+                        <th>Game Type</th>
                         <th>Outcome</th>
                         <th>Stake</th>
                         <th>Winnings</th>
@@ -810,8 +811,18 @@
         function displayOverallStats(overall) {
             const statsContainer = document.getElementById('overallStats');
 
-            const houseEdgeClass = overall.house_edge >= 0 ? 'profit' : 'loss';
-            const profitClass = overall.house_profit >= 0 ? 'profit' : 'loss';
+            // Calculate commission (25% of total stakes)
+            const commission = overall.total_stakes * 0.25;
+
+            // Calculate adjusted house profit (gross profit minus commission)
+            const grossProfit = overall.total_stakes - overall.total_payouts;
+            const adjustedHouseProfit = grossProfit - commission;
+
+            // Calculate adjusted house edge
+            const adjustedHouseEdge = overall.total_stakes > 0 ? (adjustedHouseProfit / overall.total_stakes) * 100 : 0;
+
+            const houseEdgeClass = adjustedHouseEdge >= 0 ? 'profit' : 'loss';
+            const profitClass = adjustedHouseProfit >= 0 ? 'profit' : 'loss';
 
             statsContainer.innerHTML = `
                 <div class="stat-card">
@@ -825,14 +836,19 @@
                     <div class="stat-label">Total Stakes</div>
                 </div>
                 <div class="stat-card">
+                    <i class="stat-icon fas fa-briefcase neutral"></i>
+                    <div class="stat-value">₦${commission.toLocaleString()}</div>
+                    <div class="stat-label tooltip" data-tooltip="25% commission on total stakes">Platform Commission</div>
+                </div>
+                <div class="stat-card">
                     <i class="stat-icon fas fa-money-bill-wave ${profitClass}"></i>
-                    <div class="stat-value ${profitClass}">₦${overall.house_profit.toLocaleString()}</div>
-                    <div class="stat-label tooltip" data-tooltip="Total stakes minus total payouts">House Profit</div>
+                    <div class="stat-value ${profitClass}">₦${adjustedHouseProfit.toLocaleString()}</div>
+                    <div class="stat-label tooltip" data-tooltip="Gross profit minus 25% commission">House Profit</div>
                 </div>
                 <div class="stat-card">
                     <i class="stat-icon fas fa-percentage ${houseEdgeClass}"></i>
-                    <div class="stat-value ${houseEdgeClass}">${overall.house_edge.toFixed(2)}%</div>
-                    <div class="stat-label tooltip" data-tooltip="Mathematical advantage of the house">House Edge</div>
+                    <div class="stat-value ${houseEdgeClass}">${adjustedHouseEdge.toFixed(2)}%</div>
+                    <div class="stat-label tooltip" data-tooltip="House profit as percentage of total stakes">House Edge</div>
                 </div>
                 <div class="stat-card">
                     <i class="stat-icon fas fa-trophy neutral"></i>
@@ -864,7 +880,17 @@
             }
 
             container.innerHTML = combinations.map(combo => {
-                const houseEdgeClass = combo.house_profit >= 0 ? 'profit' : 'loss';
+                // Calculate commission for this combination (25% of total stakes)
+                const commission = combo.total_stakes * 0.25;
+
+                // Calculate adjusted house profit (gross profit minus commission)
+                const grossProfit = combo.total_stakes - combo.total_payouts;
+                const adjustedHouseProfit = grossProfit - commission;
+
+                // Calculate adjusted house edge
+                const adjustedHouseEdge = combo.total_stakes > 0 ? (adjustedHouseProfit / combo.total_stakes) * 100 : 0;
+
+                const houseEdgeClass = adjustedHouseProfit >= 0 ? 'profit' : 'loss';
                 const winRateColor = combo.win_rate >= 50 ? '#48bb78' : combo.win_rate >= 25 ? '#ed8936' : '#f56565';
 
                 return `
@@ -900,7 +926,7 @@
                                 <div class="mini-stat-label">Total Stakes</div>
                             </div>
                             <div class="mini-stat">
-                                <div class="mini-stat-value ${houseEdgeClass}">₦${combo.house_profit.toLocaleString()}</div>
+                                <div class="mini-stat-value ${houseEdgeClass}">₦${adjustedHouseProfit.toLocaleString()}</div>
                                 <div class="mini-stat-label">House Profit</div>
                             </div>
                         </div>
@@ -911,8 +937,8 @@
                                 <span style="color: #f56565; font-weight: 600;">${combo.losses} Losses</span> •
                                 <span style="color: #667eea; font-weight: 600;">${combo.perfect_games} Perfect</span>
                             </div>
-                            <div class="tooltip" data-tooltip="House advantage percentage">
-                                <span class="${houseEdgeClass}" style="font-weight: 600;">${combo.house_edge}% Edge</span>
+                            <div class="tooltip" data-tooltip="House advantage percentage after commission">
+                                <span class="${houseEdgeClass}" style="font-weight: 600;">${adjustedHouseEdge.toFixed(2)}% Edge</span>
                             </div>
                         </div>
                     </div>
@@ -929,6 +955,7 @@
                 if (combo.recent_sessions) {
                     combo.recent_sessions.forEach(session => {
                         session.bomb_rate = combo.bomb_rate;
+                        session.game_type = combo.game_type;
                         allSessions.push(session);
                     });
                 }
@@ -943,7 +970,7 @@
             if (recentSessions.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px; color: #718096;">
+                        <td colspan="9" style="text-align: center; padding: 40px; color: #718096;">
                             <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
                             No recent sessions found
                         </td>
@@ -960,6 +987,7 @@
                 return `
                     <tr>
                         <td style="font-weight: 600;">${session.player_name || 'Anonymous'}</td>
+                        <td style="color: #667eea; font-weight: 500;">${session.game_type || 'bomb_flip'}</td>
                         <td><span class="outcome-badge ${outcomeClass}">${session.outcome}</span></td>
                         <td style="font-weight: 600;">₦${session.stake.toLocaleString()}</td>
                         <td style="font-weight: 600; color: ${session.winnings > 0 ? '#48bb78' : '#718096'};">₦${session.winnings.toLocaleString()}</td>
