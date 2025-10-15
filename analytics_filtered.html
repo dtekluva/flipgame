@@ -811,8 +811,8 @@
         function displayOverallStats(overall) {
             const statsContainer = document.getElementById('overallStats');
 
-            // Calculate commission (25% of total stakes)
-            const commission = overall.total_stakes * 0.25;
+            // Calculate commission (10% of total stakes)
+            const commission = overall.total_stakes * 0.10;
 
             // Calculate adjusted house profit (gross profit minus commission)
             const grossProfit = overall.total_stakes - overall.total_payouts;
@@ -838,12 +838,12 @@
                 <div class="stat-card">
                     <i class="stat-icon fas fa-briefcase neutral"></i>
                     <div class="stat-value">₦${commission.toLocaleString()}</div>
-                    <div class="stat-label tooltip" data-tooltip="25% commission on total stakes">Platform Commission</div>
+                    <div class="stat-label tooltip" data-tooltip="10% commission on total stakes">Platform Commission</div>
                 </div>
                 <div class="stat-card">
                     <i class="stat-icon fas fa-money-bill-wave ${profitClass}"></i>
                     <div class="stat-value ${profitClass}">₦${adjustedHouseProfit.toLocaleString()}</div>
-                    <div class="stat-label tooltip" data-tooltip="Gross profit minus 25% commission">House Profit</div>
+                    <div class="stat-label tooltip" data-tooltip="Gross profit minus 10% commission">House Profit</div>
                 </div>
                 <div class="stat-card">
                     <i class="stat-icon fas fa-percentage ${houseEdgeClass}"></i>
@@ -880,8 +880,8 @@
             }
 
             container.innerHTML = combinations.map(combo => {
-                // Calculate commission for this combination (25% of total stakes)
-                const commission = combo.total_stakes * 0.25;
+                // Calculate commission for this combination (10% of total stakes)
+                const commission = combo.total_stakes * 0.10;
 
                 // Calculate adjusted house profit (gross profit minus commission)
                 const grossProfit = combo.total_stakes - combo.total_payouts;
