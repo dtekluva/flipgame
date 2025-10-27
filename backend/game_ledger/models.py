@@ -195,3 +195,36 @@ class GameAnalytics(models.Model):
     def profit_loss(self):
         """Calculate profit/loss for this game"""
         return self.winning_amount - self.stake_amount
+
+
+class DailyProfitStats(models.Model):
+    """High-performance model for storing pre-calculated daily profit statistics"""
+
+    date = models.DateField(
+        unique=True,
+        db_index=True,
+        help_text="Date for which profit stats are calculated"
+    )
+    profit_data = models.JSONField(
+        help_text="Profit percentages by game type, e.g., {'bomb_flip': 20.5, 'quick_cash': 15.3}"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this record was first created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="When this record was last updated"
+    )
+
+    class Meta:
+        db_table = 'game_ledger_daily_profit_stats'
+        verbose_name = "Daily Profit Stats"
+        verbose_name_plural = "Daily Profit Stats"
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['-date'], name='daily_profit_date_desc_idx'),
+        ]
+
+    def __str__(self):
+        return f"Profit Stats for {self.date}"

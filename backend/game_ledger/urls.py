@@ -18,4 +18,7 @@ urlpatterns = [
     path('analytics/filtered/', views.filtered_analytics_dashboard, name='filtered_analytics_dashboard'),
     path('analytics/filtered-data/', views.filtered_analytics_data, name='filtered_analytics_data'),
     path('analytics/submit/', views.submit_game_analytics, name='submit_game_analytics'),
+
+    # High-Performance Profit Stats
+    path('analytics/current-profit/', views.current_profit_stats, name='current_profit_stats'),
 ]
