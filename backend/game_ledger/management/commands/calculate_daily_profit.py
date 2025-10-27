@@ -40,15 +40,8 @@ class Command(BaseCommand):
 
         self.stdout.write(f'Calculating profit stats for {target_date}')
 
-        # Check if record already exists
-        existing_record = DailyProfitStats.objects.filter(date=target_date).first()
-        if existing_record and not options['force']:
-            self.stdout.write(
-                self.style.WARNING(
-                    f'Record for {target_date} already exists. Use --force to recalculate.'
-                )
-            )
-            return
+        # Always recalculate for real-time updates (removed existence check)
+        # This ensures the cron job always updates with fresh data every 10 seconds
 
         # Calculate profit percentages by game type
         profit_data = self.calculate_profit_percentages(target_date)
