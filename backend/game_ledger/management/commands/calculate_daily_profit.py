@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db.models import Sum, F
 from django.utils import timezone
+from django.core.cache import cache
 from decimal import Decimal
 import logging
 
@@ -64,6 +65,16 @@ class Command(BaseCommand):
             date=target_date,
             defaults={'profit_data': profit_data}
         )
+
+        # Clear cache to ensure fresh data on next API call
+        cache_key = 'daily_profit_stats_latest'
+        try:
+            cache.delete(cache_key)
+            self.stdout.write(f'Cache cleared for key: {cache_key}')
+        except Exception as cache_error:
+            self.stdout.write(
+                self.style.WARNING(f'Failed to clear cache: {cache_error}')
+            )
 
         action = 'Created' if created else 'Updated'
         self.stdout.write(

@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404, render
 from django.db.models import Count, Avg, Sum, Q
 from django.http import JsonResponse
+from django.core.cache import cache
 from datetime import datetime, timedelta
 
 from .models import GameSession, GameEvent, GameAnalytics, DailyProfitStats
@@ -503,10 +504,17 @@ def filtered_analytics_data(request):
 def current_profit_stats(request):
     """
     High-performance endpoint to retrieve current profit statistics.
-    Optimized for sub-200ms response time.
+    Optimized for sub-millisecond response time with caching.
     """
+    cache_key = 'daily_profit_stats_latest'
+
     try:
-        # Single optimized query to get the most recent profit stats
+        # Try to get data from cache first (sub-millisecond response)
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
+        # Cache miss: query database
         latest_stats = DailyProfitStats.objects.select_related().order_by('-date').first()
 
         if not latest_stats:
@@ -514,12 +522,21 @@ def current_profit_stats(request):
                 'error': 'No profit statistics available'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        # Return pre-calculated data (no complex calculations here)
-        return Response({
+        # Prepare response data
+        response_data = {
             'date': latest_stats.date.isoformat(),
             'profit_by_game_type': latest_stats.profit_data,
             'last_updated': latest_stats.updated_at.isoformat()
-        }, status=status.HTTP_200_OK)
+        }
+
+        # Store in cache with 30-second TTL
+        try:
+            cache.set(cache_key, response_data, timeout=30)
+        except Exception as cache_error:
+            # Log cache error but don't fail the request
+            print(f"Cache set failed: {cache_error}")
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({
